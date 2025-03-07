@@ -8,4 +8,6 @@ public record QuestionResponse(
     int TopicId,
     IEnumerable<QuestionOptionResponse>? QuestionOptions,
     IEnumerable<ModelAnswerResponse>? ModelAnswers
+
+    /// This is comment
 );
