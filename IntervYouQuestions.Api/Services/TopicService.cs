@@ -9,7 +9,7 @@ public class TopicService(InterviewModuleContext context) : ITopicService
     }
     public async Task<Topic?> GetAsync(int Id)
     {
-        return await _context.Topics.Include(t => t.Category).AsNoTracking().FirstOrDefaultAsync(t => t.TopicId == Id);
+        return await _context.Topics.Include(t => t.Category).FirstOrDefaultAsync(t => t.TopicId == Id);
     }
 
     public async Task<Topic> AddAsync(Topic request)

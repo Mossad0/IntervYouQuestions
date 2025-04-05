@@ -46,6 +46,18 @@ public class QuestionsController : ControllerBase
         var newQuestion = await _questionService.AddWithOptionAsync(request);
         return CreatedAtAction(nameof(Get), new { id = newQuestion.QuestionId }, newQuestion);
     }
+    [HttpPost("add-with-model-answers")]
+    public async Task<IActionResult> AddWithModelAnswers([FromBody] QuestionWithModelAnswerRequest request)
+    {
+        if (request == null)
+        {
+            return BadRequest("Invalid request.");
+        }
+
+        var newQuestion = await _questionService.AddWithModelAnswerAsync(request);
+        return CreatedAtAction(nameof(Get), new { id = newQuestion.QuestionId }, newQuestion);
+    }
+
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] QuestionRequest request)

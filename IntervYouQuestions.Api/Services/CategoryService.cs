@@ -20,7 +20,6 @@ public class CategoryService(InterviewModuleContext context) : ICategoryService
     {
         return await _context.Categories
         .Include(c => c.Topics)
-        .AsNoTracking()
         .FirstOrDefaultAsync(c => c.CategoryId == Id);
     }
 
