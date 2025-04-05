@@ -24,10 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITopicService, TopicService>();
         services.AddScoped<IQuestionService, QuestionService>();
-        services.AddScoped<IQuestionOptionService, QuestionOptionService>();
-        services.AddScoped<IModelAnswerService, ModelAnswerService>();
         services.AddScoped<IInterviewService, InterviewService>();
-        services.AddScoped<IInterviewExpirationService, InterviewExpirationService>();
     
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUserService, UserService>();

@@ -13,57 +13,13 @@ namespace IntervYouQuestions.Api.Controllers
     public class InterviewController : ControllerBase
     {
         private readonly IInterviewService _interviewService;
-        private readonly IInterviewExpirationService _interviewExpirationService;
 
         public InterviewController(
-            IInterviewService interviewService,
-            IInterviewExpirationService interviewExpirationService)
+            IInterviewService interviewService)
         {
             _interviewService = interviewService;
-            _interviewExpirationService = interviewExpirationService;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<InterviewResponse>>> GetAllInterviews()
-        {
-            var interviews = await _interviewService.GetAllInterviewsAsync();
-            return Ok(interviews);
-        }
-
-        [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<InterviewResponse>>> GetUserInterviews(string userId)
-        {
-            var interviews = await _interviewService.GetUserInterviewsAsync(userId);
-            return Ok(interviews);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<InterviewResponse>> GetInterview(int id)
-        {
-            var interview = await _interviewService.GetInterviewByIdAsync(id);
-            return Ok(interview);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<InterviewResponse>> CreateInterview(CreateInterviewRequest createInterviewRequest)
-        {
-            var interview = await _interviewService.CreateInterviewAsync(createInterviewRequest);
-            return CreatedAtAction(nameof(GetInterview), new { id = interview.InterviewId }, interview);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult<InterviewResponse>> UpdateInterview(int id, UpdateInterviewRequest updateInterviewRequest)
-        {
-            var interview = await _interviewService.UpdateInterviewAsync(id, updateInterviewRequest);
-            return Ok(interview);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteInterview(int id)
-        {
-            await _interviewService.DeleteInterviewAsync(id);
-            return NoContent();
-        }
 
         [HttpPost("start")]
         public async Task<ActionResult<InterviewResponse>> StartInterview(StartInterviewRequest startInterviewRequest)
@@ -82,25 +38,13 @@ namespace IntervYouQuestions.Api.Controllers
             return Ok(interview);
         }
 
-        [HttpGet("{id}/expiration")]
-        public async Task<ActionResult<DateTime>> GetInterviewExpirationDate(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInterview(int id)
         {
-            var expirationDate = await _interviewExpirationService.GetInterviewExpirationDateAsync(id);
-            return Ok(expirationDate);
+            await _interviewService.DeleteInterviewAsync(id);
+            return NoContent();
         }
 
-        [HttpGet("{id}/is-expired")]
-        public async Task<ActionResult<bool>> IsInterviewExpired(int id)
-        {
-            var isExpired = await _interviewExpirationService.IsInterviewExpiredAsync(id);
-            return Ok(isExpired);
-        }
 
-        [HttpPost("check-expired")]
-        public async Task<IActionResult> CheckExpiredInterviews()
-        {
-            await _interviewExpirationService.CheckAndUpdateExpiredInterviewsAsync();
-            return Ok();
-        }
     }
 }

@@ -344,7 +344,7 @@ namespace IntervYouQuestions.Api.Services
                 Role = request.Role,
                 TimeLimitInMinutes = request.TimeLimitInMinutes,
                 QuestionIds = selectedQuestions.Select(q => q.QuestionId).ToList(),
-                CurrentQuestion = questionResponses.FirstOrDefault()
+                CurrentQuestion = questionResponses.FirstOrDefault()!
             };
 
             return response;
