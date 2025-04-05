@@ -1,45 +1,52 @@
 ﻿using FluentValidation.AspNetCore;
 using IntervYouQuestions.Api.Services;
 using MapsterMapper;
+using Microsoft.Extensions.Configuration;
+using Microsoft.OpenApi.Models;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 
-namespace SurveyBasket.Api;
+namespace IntervYouQuestions.Api;
 
 public static class DependencyInjection
 {
+    
     public static IServiceCollection AddDependencies(this IServiceCollection services)
     {
         services.AddControllers();
 
-        services.AddCors(options =>
-        {
-            options.AddPolicy("AllowAll",
-                builder =>
-                {
-                    builder.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                });
-        });
         services
             .AddSwaggerServices()
             .AddMapsterServices()
             .AddFluentValidationServices();
+
+
 
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITopicService, TopicService>();
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IQuestionOptionService, QuestionOptionService>();
         services.AddScoped<IModelAnswerService, ModelAnswerService>();
+        services.AddScoped<IInterviewService, InterviewService>();
+        services.AddScoped<IInterviewExpirationService, InterviewExpirationService>();
+    
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserAnswerService, UserAnswerService>();
         return services;
     }
 
     public static IServiceCollection AddSwaggerServices(this IServiceCollection services)
     {
-       
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "IntervYou Questions API",
+                Version = "v1",
+                Description = "API for managing interview questions and categories"
+            });
+        });
 
         return services;
     }
@@ -52,6 +59,7 @@ public static class DependencyInjection
 
         return services;
     }
+
     public static IServiceCollection AddFluentValidationServices(this IServiceCollection services)
     {
         services
@@ -59,7 +67,4 @@ public static class DependencyInjection
             .AddFluentValidationAutoValidation();
         return services;
     }
-
-
-
 }

@@ -4,6 +4,7 @@ using IntervYouQuestions.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IntervYouQuestions.Api.Migrations
 {
     [DbContext(typeof(InterviewModuleContext))]
-    partial class InterviewModuleContextModelSnapshot : ModelSnapshot
+    [Migration("20250330233849_FixQuestionInterviewRelationship")]
+    partial class FixQuestionInterviewRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -61,9 +64,6 @@ namespace IntervYouQuestions.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime?>("EndTime")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("ExperienceLevel")
                         .HasColumnType("int");
@@ -123,7 +123,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("InterviewQuestion", (string)null);
+                    b.ToTable("InterviewQuestion");
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.ModelAnswer", b =>
@@ -290,47 +290,6 @@ namespace IntervYouQuestions.Api.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("IntervYouQuestions.Api.Entities.UserAnswer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AnswerText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InterviewId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SelectedOptions")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InterviewId");
-
-                    b.HasIndex("QuestionId");
-
-                    b.ToTable("UserAnswers");
-                });
-
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.UserProfile", b =>
                 {
                     b.Property<int>("ProfileId")
@@ -343,6 +302,7 @@ namespace IntervYouQuestions.Api.Migrations
                         .HasColumnType("float");
 
                     b.Property<string>("Biography")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("FullName")
@@ -351,14 +311,17 @@ namespace IntervYouQuestions.Api.Migrations
                         .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("GitHubProfile")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("LinkedInProfile")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("PhoneNumber")
+                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
@@ -460,25 +423,6 @@ namespace IntervYouQuestions.Api.Migrations
                         .HasConstraintName("FK__Topics__Category__3B75D760");
 
                     b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("IntervYouQuestions.Api.Entities.UserAnswer", b =>
-                {
-                    b.HasOne("IntervYouQuestions.Api.Entities.Interview", "Interview")
-                        .WithMany()
-                        .HasForeignKey("InterviewId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IntervYouQuestions.Api.Entities.Question", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Interview");
-
-                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.UserProfile", b =>

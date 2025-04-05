@@ -1,6 +1,7 @@
+using IntervYouQuestions.Api;
 using IntervYouQuestions.Api.Persistence;
 using Microsoft.EntityFrameworkCore;
-using SurveyBasket.Api;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<InterviewModuleContext>(options =>
     options.UseSqlServer(connectionString));
 
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
@@ -27,12 +29,10 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAll");
 app.UseCors("AllowSpecificOrigin");
 app.UseAuthorization();
 

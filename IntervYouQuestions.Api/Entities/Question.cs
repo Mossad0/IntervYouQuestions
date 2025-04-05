@@ -17,4 +17,5 @@ public partial class Question
     public virtual ICollection<ModelAnswer> ModelAnswers { get; set; } = new List<ModelAnswer>();
 
     public virtual Topic Topic { get; set; } = null!;
+    public virtual ICollection<InterviewQuestion> InterviewQuestions { get; set; } = new List<InterviewQuestion>();
 }

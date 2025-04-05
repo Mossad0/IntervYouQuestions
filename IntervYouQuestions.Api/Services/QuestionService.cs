@@ -33,11 +33,11 @@ public class QuestionService : IQuestionService
 
         return new QuestionResponse(
             question.QuestionId,
-            question.Type,
+            question.Type.ToString(),
             question.Text,
             question.Difficulty,
             question.TopicId,
-            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text, o.IsCorrect)).ToList(),
+            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text)).ToList(),
             question.ModelAnswers.Select(ma => new ModelAnswerResponse(ma.ModelAnswerId, ma.Text, ma.KeyPoints)).ToList()
         );
     }
@@ -75,21 +75,20 @@ public class QuestionService : IQuestionService
 
         return new QuestionResponse(
             question.QuestionId,
-            question.Type,
+            question.Type.ToString(),
             question.Text,
             question.Difficulty,
             question.TopicId,
-            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text, o.IsCorrect)).ToList(),
+            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text)).ToList(),
             question.ModelAnswers.Select(ma => new ModelAnswerResponse(ma.ModelAnswerId, ma.Text, ma.KeyPoints)).ToList()
         );
     }
-
 
     public async Task<Question> AddWithOptionAsync(QuestionWithOptionsRequest request)
     {
         var question = new Question
         {
-            Type = request.Type,
+            Type =request.Type,
             Text = request.Text,
             Difficulty = request.Difficulty,
             TopicId = request.TopicId,
@@ -149,3 +148,4 @@ public class QuestionService : IQuestionService
         return true;
     }
 }
+
