@@ -147,7 +147,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.Category", b =>
@@ -169,7 +169,7 @@ namespace IntervYouQuestions.Api.Migrations
                     b.HasKey("CategoryId")
                         .HasName("PK__Categori__19093A0BE68A9E3C");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.Interview", b =>
@@ -224,7 +224,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Interviews");
+                    b.ToTable("Interviews", (string)null);
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.InterviewQuestion", b =>
@@ -313,7 +313,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("TopicId");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.QuestionOption", b =>
@@ -365,7 +365,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Topics");
+                    b.ToTable("Topics", (string)null);
                 });
 
             modelBuilder.Entity("IntervYouQuestions.Api.Entities.UserAnswer", b =>
@@ -406,7 +406,7 @@ namespace IntervYouQuestions.Api.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("UserAnswers");
+                    b.ToTable("UserAnswers", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

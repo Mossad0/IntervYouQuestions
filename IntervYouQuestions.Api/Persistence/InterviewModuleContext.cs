@@ -28,8 +28,8 @@ namespace IntervYouQuestions.Api.Persistence
         public DbSet<UserAnswer> UserAnswers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-     // => optionsBuilder.UseSqlServer("Server=db11765.public.databaseasp.net; Database=db11765; User Id=db11765; Password=oT?9K8s_3m=F; Encrypt=False; MultipleActiveResultSets=True;");
-      => optionsBuilder.UseSqlServer("Server=RABEE3; Database=db11765; TrustServerCertificate = True;Trusted_Connection=True ; MultipleActiveResultSets=True;");
+     => optionsBuilder.UseSqlServer("Server=db11765.public.databaseasp.net; Database=db11765; User Id=db11765; Password=oT?9K8s_3m=F; Encrypt=False; MultipleActiveResultSets=True;");
+      //=> optionsBuilder.UseSqlServer("Server=RABEE3; Database=db11765; TrustServerCertificate = True;Trusted_Connection=True ; MultipleActiveResultSets=True;");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
