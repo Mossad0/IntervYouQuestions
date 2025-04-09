@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using IntervYouQuestions.Api.Authentication;
 
 namespace IntervYouQuestions.Api.Services
 {
@@ -17,15 +19,18 @@ namespace IntervYouQuestions.Api.Services
         private readonly InterviewModuleContext _context;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
+        private readonly UserManager<AppUser> _userManager;
 
         public InterviewService(
             InterviewModuleContext context,
             IMapper mapper,
-            IUserService userService)
+            IUserService userService,
+            UserManager<AppUser> userManager)
         {
             _context = context;
             _mapper = mapper;
             _userService = userService;
+            _userManager = userManager;
         }
 
         public async Task<IEnumerable<InterviewResponse>> GetAllInterviewsAsync()
@@ -409,7 +414,7 @@ namespace IntervYouQuestions.Api.Services
         public async Task<InterviewResponse> StartInterviewForUserAsync(string userId, int numberOfQuestions, int timeLimitInMinutes = 30)
         {
             // Get user profile
-            var userProfile = await _userService.GetUserProfileAsync(userId);
+            var userProfile = await _userManager.FindByIdAsync(userId);
             if (userProfile == null)
                 throw new NotFoundException($"User with ID {userId} not found");
 
@@ -417,7 +422,7 @@ namespace IntervYouQuestions.Api.Services
             var request = new StartInterviewRequest
             {
                 ExperienceLevel = Enum.Parse<ExperienceLevel>(userProfile.ExperienceLevel),
-                Role = Enum.Parse<RoleType>(userProfile.Role),
+                Role = Enum.Parse<RoleType>(userProfile.PreferredRole),
                 NumberOfQuestions = numberOfQuestions,
                 TimeLimitInMinutes = timeLimitInMinutes,
                 UserId = userId

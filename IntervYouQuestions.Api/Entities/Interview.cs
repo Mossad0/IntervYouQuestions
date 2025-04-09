@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using IntervYouQuestions.Api.Authentication;
+using System.ComponentModel.DataAnnotations;
 
 namespace IntervYouQuestions.Api.Entities
 {
@@ -25,7 +26,6 @@ namespace IntervYouQuestions.Api.Entities
         [Required]
         public ExperienceLevel ExperienceLevel { get; set; }
 
-        public string UserId { get; set; }
 
         [Required]
         public DateTime StartTime { get; set; }
@@ -34,7 +34,10 @@ namespace IntervYouQuestions.Api.Entities
 
         public string Role { get; set; } // Add this line
 
-        public virtual User User { get; set; }
+
+        public string UserId { get; set; }
+
+        public virtual AppUser User { get; set; }
 
         public virtual ICollection<InterviewQuestion> InterviewQuestions { get; set; }
     }

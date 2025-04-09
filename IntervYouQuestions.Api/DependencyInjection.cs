@@ -1,6 +1,8 @@
 ﻿using FluentValidation.AspNetCore;
+using IntervYouQuestions.Api.Authentication;
 using IntervYouQuestions.Api.Services;
 using MapsterMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -17,16 +19,19 @@ public static class DependencyInjection
         services
             .AddSwaggerServices()
             .AddMapsterServices()
-            .AddFluentValidationServices();
+            .AddFluentValidationServices()
+            .AddAuthServices()
+            ;
 
 
+        
 
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITopicService, TopicService>();
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IInterviewService, InterviewService>();
-    
-        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IEmailService, MailKitEmailService>();
+
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IUserAnswerService, UserAnswerService>();
         return services;
@@ -62,6 +67,23 @@ public static class DependencyInjection
         services
             .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly())
             .AddFluentValidationAutoValidation();
+        return services;
+    }
+    public static IServiceCollection AddAuthServices(this IServiceCollection services)
+    {
+        services.AddIdentity<AppUser, IdentityRole>()
+               .AddEntityFrameworkStores<InterviewModuleContext>()
+               .AddDefaultTokenProviders()
+               ;
+
+        services.Configure<IdentityOptions>(options =>
+        {
+            options.SignIn.RequireConfirmedEmail = true;
+            options.Password.RequiredLength = 8;
+        });
+
+
+
         return services;
     }
 }

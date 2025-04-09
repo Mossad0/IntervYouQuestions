@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using IntervYouQuestions.Api.Authentication;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace IntervYouQuestions.Api.Persistence
 {
-    public partial class InterviewModuleContext : DbContext
+    public partial class InterviewModuleContext : IdentityDbContext<AppUser>
     {
         public InterviewModuleContext()
         {
@@ -13,23 +15,33 @@ namespace IntervYouQuestions.Api.Persistence
         {
         }
 
-        public DbSet<User> Users { get; set; }
         public DbSet<Interview> Interviews { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<ModelAnswer> ModelAnswers { get; set; }
         public virtual DbSet<Question> Questions { get; set; }
         public virtual DbSet<QuestionOption> QuestionOptions { get; set; }
         public virtual DbSet<Topic> Topics { get; set; }
+        public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public DbSet<InterviewQuestion> InterviewQuestions { get; set; }
 
         public DbSet<UserAnswer> UserAnswers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-      => optionsBuilder.UseSqlServer("Server=db11765.public.databaseasp.net; Database=db11765; User Id=db11765; Password=oT?9K8s_3m=F; Encrypt=False; MultipleActiveResultSets=True;");
+     // => optionsBuilder.UseSqlServer("Server=db11765.public.databaseasp.net; Database=db11765; User Id=db11765; Password=oT?9K8s_3m=F; Encrypt=False; MultipleActiveResultSets=True;");
+      => optionsBuilder.UseSqlServer("Server=RABEE3; Database=db11765; TrustServerCertificate = True;Trusted_Connection=True ; MultipleActiveResultSets=True;");
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<AppUser>()
+          .Property(u => u.DateOfBirth)
+          .HasConversion(
+              d => d.Value.ToDateTime(TimeOnly.MinValue),
+              d => DateOnly.FromDateTime(d)
+          );
+
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasKey(e => e.CategoryId).HasName("PK__Categori__19093A0BE68A9E3C");
@@ -93,38 +105,6 @@ namespace IntervYouQuestions.Api.Persistence
                     .HasConstraintName("FK__Topics__Category__3B75D760");
             });
 
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasKey(e => e.UserId).HasName("PK__Users__UserId");
-                entity.Property(e => e.UserId).HasMaxLength(50);
-                entity.Property(e => e.Username).HasMaxLength(255).IsRequired();
-                entity.Property(e => e.Email).HasMaxLength(255).IsRequired();
-                entity.Property (e => e.Password).HasMaxLength(500).IsRequired(); // Store hashed password
-                entity.Property(e => e.ExperienceLevel).HasMaxLength(50).IsRequired();
-                entity.Property(e => e.Role).HasMaxLength(50).IsRequired();
-                entity.Property(e => e.RegisteredDate).HasColumnType("datetime").HasDefaultValueSql("GETDATE()");
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
-
-                entity.HasIndex(e => e.Email).IsUnique();
-            });
-
-            // UserProfile Entity
-            modelBuilder.Entity<UserProfile>(entity =>
-            {
-                entity.HasKey(e => e.ProfileId).HasName("PK__UserProfiles");
-                entity.Property(e => e.FullName).HasMaxLength(255);
-                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
-                entity.Property(e => e.LinkedInProfile).HasMaxLength(500);
-                entity.Property(e => e.GitHubProfile).HasMaxLength(500);
-                entity.Property(e => e.Biography).HasColumnType("text");
-
-                entity.HasOne(d => d.User)
-                    .WithOne()
-                    .HasForeignKey<UserProfile>(d => d.UserId)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__UserProfile__User");
-            });
-
             // Interview Entity
             modelBuilder.Entity<Interview>(entity =>
             {
@@ -176,6 +156,7 @@ namespace IntervYouQuestions.Api.Persistence
                 .OnDelete(DeleteBehavior.Restrict);
 
 
+                base.OnModelCreating(modelBuilder);
 
             OnModelCreatingPartial(modelBuilder);
         }

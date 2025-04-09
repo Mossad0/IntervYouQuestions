@@ -1,10 +1,12 @@
 using IntervYouQuestions.Api;
-using IntervYouQuestions.Api.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using IntervYouQuestions.Api.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -13,10 +15,40 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDependencies();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<InterviewModuleContext>(options =>
     options.UseSqlServer(connectionString));
 
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT settings section not found or invalid.");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme; // Optional
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true; // Save token to HttpContext
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment(); // Use HTTPS in production
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
+        ClockSkew = TimeSpan.Zero // Optional: reduce tolerance for token expiration
+    };
+});
 
 builder.Services.AddCors(options =>
 {

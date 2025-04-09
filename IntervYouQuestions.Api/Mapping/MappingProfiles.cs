@@ -1,10 +1,11 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using IntervYouQuestions.Api.Authentication;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace IntervYouQuestions.Api.Mapping
 {
   
         
-        public class MappingProfiles : UserProfile
+        public class MappingProfiles : AppUser
     {
             public MappingProfiles()
             {

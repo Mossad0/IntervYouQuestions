@@ -1,12 +1,4 @@
-﻿using IntervYouQuestions.Api.Contracts.Requests;
-using IntervYouQuestions.Api.Contracts.Responses;
-using IntervYouQuestions.Api.Services;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace IntervYouQuestions.Api.Controllers
+﻿namespace IntervYouQuestions.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
