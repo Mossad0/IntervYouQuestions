@@ -2,6 +2,6 @@
 
 public record QuestionOptionResponse(
     int OptionId,
-    string Text
-   // bool IsCorrect
+    string Text,
+    bool IsCorrect
 );

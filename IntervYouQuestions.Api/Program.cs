@@ -19,6 +19,12 @@ builder.Services.AddDependencies();
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
+builder.Services.AddHttpClient<IExternalAnswerService, ExternalAnswerService>(client =>
+{
+    string baseUrl = builder.Configuration["ExternalApi:BaseUrl"] ?? "https://similarity-service-1035558496395.us-central1.run.app/";
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<InterviewModuleContext>(options =>
@@ -54,7 +60,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
         builder => builder
-            .WithOrigins("http://localhost:5173")
+            //.WithOrigins("http://localhost:5173")
+            .AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod());
 });

@@ -78,7 +78,9 @@ namespace IntervYouQuestions.Api.Services
                     q.TopicId,                     // TopicId (int - assumes Question entity has this)
                     q.QuestionOptions.Select(o => new QuestionOptionResponse( // Use constructor ( )
                  o.OptionId,  // First argument for OptionId
-                 o.Text       // Second argument for Text
+                 o.Text,
+                 o.IsCorrect
+                 // Second argument for Text
             )).ToList(),                    // QuestionOptions (IEnumerable<QuestionOptionResponse>?) - Use ToList()
                     null                           // ModelAnswers - SET TO NULL deliberately
                                                    // You do NOT want to send the model answers to the client
@@ -495,8 +497,8 @@ namespace IntervYouQuestions.Api.Services
 
             var options = question.QuestionOptions.Select(o => new QuestionOptionResponse(
                 o.OptionId,  // Use the option's own ID, not QuestionId
-                o.Text
-                //o.IsCorrect
+                o.Text,
+                o.IsCorrect
             )).ToList();
 
             if (!_context.Entry(question).Collection(q => q.ModelAnswers).IsLoaded)

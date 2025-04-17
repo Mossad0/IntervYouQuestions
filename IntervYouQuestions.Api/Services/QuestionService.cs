@@ -37,7 +37,7 @@ public class QuestionService : IQuestionService
             question.Text,
             question.Difficulty,
             question.TopicId,
-            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text)).ToList(),
+            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text, o.IsCorrect)).ToList(),
             question.ModelAnswers.Select(ma => new ModelAnswerResponse(ma.ModelAnswerId, ma.Text, ma.KeyPoints)).ToList()
         );
     }
@@ -79,7 +79,7 @@ public class QuestionService : IQuestionService
             question.Text,
             question.Difficulty,
             question.TopicId,
-            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text)).ToList(),
+            question.QuestionOptions.Select(o => new QuestionOptionResponse(o.OptionId, o.Text, o.IsCorrect)).ToList(),
             question.ModelAnswers.Select(ma => new ModelAnswerResponse(ma.ModelAnswerId, ma.Text, ma.KeyPoints)).ToList()
         );
     }

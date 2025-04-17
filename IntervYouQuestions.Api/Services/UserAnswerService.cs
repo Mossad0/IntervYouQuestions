@@ -14,14 +14,17 @@ namespace IntervYouQuestions.Api.Services
     public class UserAnswerService : IUserAnswerService
     {
         private readonly InterviewModuleContext _context;
+        private readonly IExternalAnswerService _externalAnswerService;
+
         // Assuming you have these string constants defined somewhere, or use literals directly
         private const string QuestionTypeMCQ = "mcq";
         private const string QuestionTypeEssay = "essay";
         private const string QuestionTypeMultipleChoice = "multiplechoice"; // Or whatever string you use for this
 
-        public UserAnswerService(InterviewModuleContext context)
+        public UserAnswerService(InterviewModuleContext context,IExternalAnswerService externalAnswerService)
         {
             _context = context;
+            _externalAnswerService = externalAnswerService;
         }
 
         public async Task SaveUserAnswerAsync(SubmitAnswerRequest request)
@@ -83,6 +86,9 @@ namespace IntervYouQuestions.Api.Services
                 .Include(i => i.InterviewQuestions)
                     .ThenInclude(iq => iq.Question)
                         .ThenInclude(q => q.QuestionOptions) // Needed for grading MCQ/MultipleChoice
+                  .Include(i => i.InterviewQuestions)        // Start the path again to include another Question-related collection
+                        .ThenInclude(iq => iq.Question)         // Go back down to the Question
+                        .ThenInclude(q => q.ModelAnswers)
                 .FirstOrDefaultAsync(i => i.Id == interviewId);
 
             if (interview == null)
@@ -162,9 +168,31 @@ namespace IntervYouQuestions.Api.Services
 
                         // Case for Essay/Text answers
                         case QuestionTypeEssay:
-                            isCorrect = false; // Cannot auto-grade
-                            feedback = "Text answer requires manual review";
-                            break;
+                            var request = new ExternalAnswerRequest()
+                            {
+                                model_answer = question.ModelAnswers.FirstOrDefault().Text,
+                                student_answer = userAnswerText
+                            };
+                            ExternalAnswerResponse response = await _externalAnswerService.PostQuestion(request);
+                            if (response is null)
+                            {
+                                isCorrect = false;
+                                break;
+                            }
+                            if (response.Result == "True")
+                            {
+                                isCorrect = true;
+                                feedback = $"Question is answered Right!";
+                                break;
+
+                            }
+                            else
+                            {
+                                isCorrect = false;
+                                feedback = $"Incorrect Answer {response.Label}";
+                                break;
+                            }
+                           
 
                         // Case for Single Choice MCQ
                         case QuestionTypeMCQ:

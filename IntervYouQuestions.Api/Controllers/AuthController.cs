@@ -2,10 +2,7 @@
 using IntervYouQuestions.Api.Authentication.Dto;
 using IntervYouQuestions.Api.Authentication.Helpers;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,7 +19,9 @@ namespace IntervYouQuestions.Api.Controllers
          IEmailService emailService,
          ILogger<AuthController> logger,
          InterviewModuleContext context,
-         IOptions<JwtSettings> jwtSettings
+         IOptions<JwtSettings> jwtSettings,
+         IConfiguration configuration
+
         ) : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager = userManager;
@@ -31,6 +30,7 @@ namespace IntervYouQuestions.Api.Controllers
         private readonly IEmailService _emailService = emailService;
         private readonly ILogger<AuthController> _logger = logger;
         private readonly InterviewModuleContext _context = context;
+        private readonly IConfiguration _configuration = configuration;
         private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
         [HttpPost("register/mobile")]
@@ -52,10 +52,10 @@ namespace IntervYouQuestions.Api.Controllers
                 var encodedToken = HttpUtility.UrlEncode(token);
 
                 // Construct deep link using configured mobile app scheme
-                //var confirmationLink = $"{_frontendUrls.MobileAppScheme}://email-verification?userId={user.Id}&token={encodedToken}";
+                // var confirmationLink = $"{MobileAppScheme}://email-verification?userId={user.Id}&token={encodedToken}";
 
                 var subject = "Confirm Your Email";
-               // var message = $"<h1>Welcome!</h1><p>Please confirm your email address using this link in your mobile app: <a href='{confirmationLink}'>Confirm Email</a></p><p>Or copy/paste: {confirmationLink}</p>";
+                //var message = $"<h1>Welcome!</h1><p>Please confirm your email address using this link in your mobile app: <a href='{confirmationLink}'>Confirm Email</a></p><p>Or copy/paste: {confirmationLink}</p>";
 
                 //await _emailService.SendEmailAsync(user.Email, subject, message);
 
@@ -71,10 +71,10 @@ namespace IntervYouQuestions.Api.Controllers
             {
                 FullName = model.FullName,
                 Email = model.Email,
-                UserName = model.Email, // Important: Identity uses UserName for uniqueness by default
+                UserName = model.Email,
                 Gender = model.Gender,
                 DateOfBirth = model.DateOfBirth,
-                EmailConfirmed = false // Ensure starts as false
+                EmailConfirmed = false
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -82,20 +82,20 @@ namespace IntervYouQuestions.Api.Controllers
             if (result.Succeeded)
             {
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                var encodedToken = HttpUtility.UrlEncode(token); // Ensure token is URL-safe
+                var encodedToken = HttpUtility.UrlEncode(token); // Encode for URL query string
 
-                // Construct link using configured base URL
-                var confirmationLink = Url.Action(
-                                  action: nameof(ConfirmEmail),
-                                  controller: "Auth", // Controller name without "Controller" suffix
-                                  values: new { userId = user.Id, token = encodedToken },
-                                  protocol: Request.Scheme); // Use current request's scheme (http/https)
-                if (string.IsNullOrEmpty(confirmationLink))
+                var frontendBaseUrl = _configuration["FrontendUrls:FrontendBaseUrl"];
+                if (string.IsNullOrEmpty(frontendBaseUrl))
                 {
-                    _logger.LogError("Could not generate confirmation link for web registration. Check routing setup.");
-                    // Handle error appropriately - maybe return a 500 or specific error message
-                    return StatusCode(StatusCodes.Status500InternalServerError, "Could not generate confirmation link.");
+                    _logger.LogError("FrontendBaseUrl is not configured. Cannot generate confirmation link.");
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Registration succeeded but could not generate confirmation link due to server configuration.");
                 }
+
+                var confirmationLink = $"{frontendBaseUrl}/auth/verify-email?userId={user.Id}&token={encodedToken}";
+                //                                         ^^^^^^ frontend route path
+
+                _logger.LogInformation("Generated confirmation link for web registration: {Link}", confirmationLink); // Good for debugging
+
                 var subject = "Confirm Your Email";
                 var message = $"<h1>Welcome!</h1><p>Please confirm your email address by clicking this link: <a href='{confirmationLink}'>Confirm Email</a></p>";
 
@@ -104,10 +104,9 @@ namespace IntervYouQuestions.Api.Controllers
                     await _emailService.SendEmailAsync(user.Email, subject, message);
                     return Ok("Registration successful. Please check your email to confirm your account.");
                 }
-                catch (Exception ex) // Catch potential email sending errors
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to send confirmation email to {Email}", user.Email);
-                    // Inform the user, but the account *was* created. Maybe suggest resend?
                     return StatusCode(StatusCodes.Status207MultiStatus, "Registration successful, but confirmation email could not be sent. Please try requesting password reset if needed, or contact support.");
                 }
             }
@@ -115,36 +114,123 @@ namespace IntervYouQuestions.Api.Controllers
         }
 
 
-        [HttpGet("confirm-email")]
-        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        //[HttpGet("confirm-email")]
+        //public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        //{
+        //    if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+        //    {
+        //        return BadRequest("User ID and Token are required.");
+        //    }
+
+        //    var user = await _userManager.FindByIdAsync(userId);
+        //    if (user == null)
+        //    {
+        //        return BadRequest("Invalid confirmation attempt.");
+        //    }
+
+        //    var decodedToken = HttpUtility.UrlDecode(token);
+
+        //    var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
+
+        //    if (result.Succeeded)
+        //    {
+        //        return Ok("Email confirmed successfully!");
+        //    }
+
+        //    _logger.LogError("Email confirmation failed for user {UserId}. Errors: {Errors}", userId, string.Join(", ", result.Errors.Select(e => e.Description)));
+        //    return BadRequest("Email confirmation failed. The link may be invalid or expired.");
+        //}
+
+        // DTO for email confirmation request from frontend
+        public record VerifyEmailRequestDto(string UserId, string Token);
+
+        [HttpPost("verify-email-token")] // <<< NEW Endpoint
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> VerifyEmailToken([FromBody] VerifyEmailRequestDto request)
         {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.Token))
             {
                 return BadRequest("User ID and Token are required.");
             }
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(request.UserId);
             if (user == null)
             {
-                // Don't reveal if user exists or not for security
-                return BadRequest("Invalid confirmation attempt.");
+                _logger.LogWarning("VerifyEmailToken attempt for non-existent UserId: {UserId}", request.UserId);
+                return NotFound("Verification failed. User not found or invalid token.");
             }
 
-            // Token might be URL encoded, decode it (though Identity might handle this)
-            var decodedToken = HttpUtility.UrlDecode(token);
+            string decodedToken;
+            try
+            {
+                decodedToken = HttpUtility.UrlDecode(request.Token);
+                if (string.IsNullOrWhiteSpace(decodedToken))
+                {
+                    throw new ArgumentException("Decoded token is empty or whitespace.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to decode verification token for UserId: {UserId}", request.UserId);
+                return BadRequest("Verification failed. Invalid token format provided.");
+            }
 
             var result = await _userManager.ConfirmEmailAsync(user, decodedToken);
 
             if (result.Succeeded)
             {
-                // Redirect to a success page on your frontend?
-                // return Redirect($"{_frontendUrls.WebBaseUrl}/email-confirmed");
-                return Ok("Email confirmed successfully!");
+                _logger.LogInformation("Email confirmed via VerifyEmailToken for UserId: {UserId}", request.UserId);
+                return Ok("Email confirmed successfully!"); 
+            }
+            else
+            {
+                _logger.LogError("VerifyEmailToken failed for UserId {UserId}. Errors: {Errors}", request.UserId, string.Join(", ", result.Errors.Select(e => e.Description)));
+                return BadRequest("Email confirmation failed. The link may be invalid or expired.");
+            }
+        }
+
+
+        [HttpPost("submit-password-reset")] 
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SubmitPasswordReset([FromBody] ResetPasswordDto model)
+        {
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                _logger.LogWarning("SubmitPasswordReset attempt for non-existent email: {Email}", model.Email);
+                return BadRequest("Password reset failed. Please ensure the email is correct or try the 'forgot password' process again.");
             }
 
-            // Log error details if needed
-            _logger.LogError("Email confirmation failed for user {UserId}. Errors: {Errors}", userId, string.Join(", ", result.Errors.Select(e => e.Description)));
-            return BadRequest("Email confirmation failed. The link may be invalid or expired.");
+            string decodedToken;
+            try
+            {
+                decodedToken = HttpUtility.UrlDecode(model.Token);
+                if (string.IsNullOrWhiteSpace(decodedToken))
+                {
+                    throw new ArgumentException("Decoded token is empty or whitespace.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to decode password reset token for email: {Email}", model.Email);
+                return BadRequest("Password reset failed. Invalid token format provided.");
+            }
+            var result = await _userManager.ResetPasswordAsync(user, decodedToken, model.NewPassword);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Password reset successful via SubmitPasswordReset for user {Email}", model.Email);
+                return Ok("Password has been reset successfully."); // Simple success response
+            }
+
+            _logger.LogWarning("SubmitPasswordReset failed for user {Email}. Errors: {Errors}", model.Email, string.Join(", ", result.Errors.Select(e => e.Description)));
+            return BadRequest("Password reset failed. The token may be invalid/expired or the password does not meet requirements.");
         }
 
         [HttpPut("update-preferences")]
@@ -154,7 +240,6 @@ namespace IntervYouQuestions.Api.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
             {
-                // Should not happen if [Authorize] is working, but good practice
                 return Unauthorized();
             }
             var user = await _userManager.FindByIdAsync(userId);
@@ -187,7 +272,6 @@ namespace IntervYouQuestions.Api.Controllers
             if (!user.EmailConfirmed)
             {
                 return Unauthorized("Email not confirmed. Please check your inbox.");
-                // Optional: Resend confirmation email logic here
             }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
@@ -217,12 +301,8 @@ namespace IntervYouQuestions.Api.Controllers
             }
             if (result.IsLockedOut)
             {
-                // Consider logging this attempt
                 return Unauthorized("Account locked due to too many failed login attempts.");
             }
-            // For requires two-factor, etc. Handle as needed.
-            // if (result.RequiresTwoFactor) { ... }
-
             return Unauthorized("Invalid credentials.");
         }
 
@@ -280,28 +360,31 @@ namespace IntervYouQuestions.Api.Controllers
             if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
             {
                 _logger.LogWarning("Password reset request for non-existent or unconfirmed email: {Email}", model.Email);
+                // Still return Ok to prevent email enumeration attacks
                 return Ok("If an account exists for this email and is confirmed, a password reset link has been sent.");
             }
 
-            var rawToken = await _userManager.GeneratePasswordResetTokenAsync(user); // Or Confirmation token
+            var rawToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = HttpUtility.UrlEncode(rawToken); // Encode for URL query string
 
-            // *** DO NOT manually encode here ***
-
-            var link = Url.Action(
-                action: "HandlePasswordResetLink", // Or ConfirmEmail
-                controller: "Auth",
-                values: new { email = user.Email, token = rawToken }, // <-- Pass the RAW token
-                protocol: Request.Scheme);
-            if (string.IsNullOrEmpty(link))
+            // --- Get Frontend Base URL from Config ---
+            var frontendBaseUrl = _configuration["FrontendUrls:FrontendBaseUrl"]; 
+            if (string.IsNullOrEmpty(frontendBaseUrl))
             {
-                _logger.LogError("Could not generate password reset link URL for {Email}. Check routing.", model.Email);
-                // Still return Ok to the user, but log the server-side issue
+                _logger.LogError("FrontendBaseUrl is not configured. Cannot generate password reset link.");
+                // Still return Ok to user, but log the server-side issue
                 return Ok("If an account exists for this email and is confirmed, a password reset link has been sent. (Internal link generation issue occurred)");
             }
 
+            // --- Construct link pointing to FRONTEND ---
+            var encodedEmail = HttpUtility.UrlEncode(user.Email); // Also encode email just in case
+            var link = $"{frontendBaseUrl}/auth/reset-password?email={encodedEmail}&token={encodedToken}";
+            //                             ^^^^^^^^^^^^^^^^^^^^^^ CHOOSE your frontend route path
+
+            _logger.LogInformation("Generated password reset link: {Link}", link);
+
             var subject = "Reset Your Password";
-            // The link in the email now points to your API (e.g., https://yourapi.com/api/Auth/handle-reset-link?email=...)
-            var message = $"<h1>Password Reset</h1><p>Please reset your password by clicking this link: <a href='{link}'>Reset Password</a></p><p>Follow the instructions on the page or in your application.</p>";
+            var message = $"<h1>Password Reset</h1><p>Please reset your password by clicking this link: <a href='{link}'>Reset Password</a></p><p>This will take you to the application to set a new password.</p>";
 
             try
             {
@@ -310,7 +393,7 @@ namespace IntervYouQuestions.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send password reset email to {Email}", user.Email);
-                // Don't expose error details
+                // Don't expose error details, but log them
             }
 
             return Ok("If an account exists for this email and is confirmed, a password reset link has been sent.");
@@ -368,26 +451,26 @@ namespace IntervYouQuestions.Api.Controllers
             return BadRequest("Password reset failed. The link may be invalid or expired.");
         }
 
-        [HttpGet("handle-reset-link")] // Route for the link generated by Url.Action
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult HandlePasswordResetLink([FromQuery] string email, [FromQuery] string token)
-        {
-            // Basic validation
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
-            {
-                _logger.LogWarning("HandlePasswordResetLink called with missing email or token.");
-                // Consider returning a more user-friendly HTML error page if possible
-                return BadRequest("Invalid password reset link parameters.");
-            }
+        //[HttpGet("handle-reset-link")] // Route for the link generated by Url.Action
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //public IActionResult HandlePasswordResetLink([FromQuery] string email, [FromQuery] string token)
+        //{
+        //    // Basic validation
+        //    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        //    {
+        //        _logger.LogWarning("HandlePasswordResetLink called with missing email or token.");
+        //        // Consider returning a more user-friendly HTML error page if possible
+        //        return BadRequest("Invalid password reset link parameters.");
+        //    }
 
-            _logger.LogInformation("Password reset link clicked for email {Email}", email);
+        //    _logger.LogInformation("Password reset link clicked for email {Email}", email);
 
            
-            return Ok($"Password reset link processed. Please return to the application and use the provided form to enter your new password, using the email '{email}' and the token from the link you just clicked.");
+        //    return Ok($"Password reset link processed. Please return to the application and use the provided form to enter your new password, using the email '{email}' and the token from the link you just clicked.");
 
             
-        }
+        //}
 
     }
 
